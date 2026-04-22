@@ -5,6 +5,7 @@ import { upstreamErrorResponseSchema } from "#/orpc/jamie-contract";
 import type { JamieEndpoint } from "#/orpc/jamie-endpoints";
 
 const DEFAULT_JAMIE_API_BASE_URL = "https://beta-api.meetjamie.ai";
+const DEFAULT_JAMIE_API_TIMEOUT_MS = 15_000;
 
 type HeaderMap = Record<string, string>;
 
@@ -40,8 +41,22 @@ export class JamieResponseParseError extends Error {
   }
 }
 
+export class JamieRequestTimeoutError extends Error {
+  readonly timeoutMs: number;
+
+  constructor(timeoutMs: number) {
+    super(`Jamie upstream request timed out after ${timeoutMs}ms`);
+    this.name = "JamieRequestTimeoutError";
+    this.timeoutMs = timeoutMs;
+  }
+}
+
 function getJamieApiBaseUrl() {
   return env.JAMIE_API_BASE_URL ?? DEFAULT_JAMIE_API_BASE_URL;
+}
+
+function getJamieApiTimeoutMs() {
+  return env.JAMIE_API_TIMEOUT_MS ?? DEFAULT_JAMIE_API_TIMEOUT_MS;
 }
 
 function headersToRecord(headers: Headers): HeaderMap {
@@ -91,12 +106,15 @@ export async function callJamieEndpoint<TEndpoint extends JamieEndpoint<any, any
   );
 
   const encodedInput = encodeUpstreamInput(upstreamInput);
+  const timeoutMs = getJamieApiTimeoutMs();
+  const controller = new AbortController();
   const init: RequestInit = {
     method: endpoint.method,
     headers: {
       "x-api-key": apiKey,
       "content-type": "application/json",
     },
+    signal: controller.signal,
   };
 
   if (endpoint.method === "GET") {
@@ -107,20 +125,34 @@ export async function callJamieEndpoint<TEndpoint extends JamieEndpoint<any, any
     init.body = encodedInput;
   }
 
-  const response = await fetch(url, init);
-  const headers = headersToRecord(response.headers);
-  const body = await response.json();
+  const timeoutId = globalThis.setTimeout(() => {
+    controller.abort();
+  }, timeoutMs);
 
-  if (!response.ok) {
-    throw new JamieUpstreamError(response.status, body, headers);
+  try {
+    const response = await fetch(url, init);
+    const headers = headersToRecord(response.headers);
+    const body = await response.json();
+
+    if (!response.ok) {
+      throw new JamieUpstreamError(response.status, body, headers);
+    }
+
+    const successPayload = unwrapSuccessPayload(body);
+    const parsed = endpoint.outputSchema.safeParse(successPayload);
+
+    if (!parsed.success) {
+      throw new JamieResponseParseError(successPayload, parsed.error);
+    }
+
+    return parsed.data;
+  } catch (error) {
+    if (error instanceof Error && error.name === "AbortError") {
+      throw new JamieRequestTimeoutError(timeoutMs);
+    }
+
+    throw error;
+  } finally {
+    globalThis.clearTimeout(timeoutId);
   }
-
-  const successPayload = unwrapSuccessPayload(body);
-  const parsed = endpoint.outputSchema.safeParse(successPayload);
-
-  if (!parsed.success) {
-    throw new JamieResponseParseError(successPayload, parsed.error);
-  }
-
-  return parsed.data;
 }
