@@ -8,10 +8,21 @@ import {
   workspaceListMeetingsQuerySchema,
   workspaceListTasksQuerySchema,
 } from "#/orpc/jamie-contract";
+import {
+  workspaceDeleteMeetingEndpoint,
+  workspaceGetMeetingEndpoint,
+  workspaceListMeetingsEndpoint,
+  workspaceListTasksEndpoint,
+} from "#/orpc/jamie-endpoints";
+import { callJamieEndpoint } from "#/orpc/jamie-client";
 import { jamieProtected } from "#/orpc/base";
 
-function notImplemented(name: string): never {
-  throw new Error(`${name} is not implemented yet`);
+function getJamieApiKey(context: { jamieApiKey?: string }) {
+  if (!context.jamieApiKey) {
+    throw new Error("Jamie API key missing from context");
+  }
+
+  return context.jamieApiKey;
 }
 
 export const listMeetings = jamieProtected
@@ -23,7 +34,13 @@ export const listMeetings = jamieProtected
   })
   .input(workspaceListMeetingsQuerySchema)
   .output(meetingsListResponseSchema)
-  .handler(() => notImplemented("workspace.listMeetings"));
+  .handler(({ context, input }) =>
+    callJamieEndpoint(
+      workspaceListMeetingsEndpoint,
+      input,
+      getJamieApiKey(context),
+    ),
+  );
 
 export const getMeeting = jamieProtected
   .route({
@@ -34,7 +51,13 @@ export const getMeeting = jamieProtected
   })
   .input(getMeetingInputSchema)
   .output(meetingDetailResponseSchema)
-  .handler(() => notImplemented("workspace.getMeeting"));
+  .handler(({ context, input }) =>
+    callJamieEndpoint(
+      workspaceGetMeetingEndpoint,
+      input,
+      getJamieApiKey(context),
+    ),
+  );
 
 export const deleteMeeting = jamieProtected
   .route({
@@ -45,7 +68,13 @@ export const deleteMeeting = jamieProtected
   })
   .input(deleteMeetingInputSchema)
   .output(deleteMeetingResponseSchema)
-  .handler(() => notImplemented("workspace.deleteMeeting"));
+  .handler(({ context, input }) =>
+    callJamieEndpoint(
+      workspaceDeleteMeetingEndpoint,
+      input,
+      getJamieApiKey(context),
+    ),
+  );
 
 export const listTasks = jamieProtected
   .route({
@@ -56,4 +85,10 @@ export const listTasks = jamieProtected
   })
   .input(workspaceListTasksQuerySchema)
   .output(tasksListResponseSchema)
-  .handler(() => notImplemented("workspace.listTasks"));
+  .handler(({ context, input }) =>
+    callJamieEndpoint(
+      workspaceListTasksEndpoint,
+      input,
+      getJamieApiKey(context),
+    ),
+  );
