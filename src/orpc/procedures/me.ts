@@ -12,10 +12,23 @@ import {
   tagsListResponseSchema,
   tasksListResponseSchema,
 } from "#/orpc/jamie-contract";
+import {
+  meDeleteMeetingEndpoint,
+  meGetMeetingEndpoint,
+  meListMeetingsEndpoint,
+  meListTagsEndpoint,
+  meListTasksEndpoint,
+  meSearchMeetingsEndpoint,
+} from "#/orpc/jamie-endpoints";
+import { callJamieEndpoint } from "#/orpc/jamie-client";
 import { jamieProtected } from "#/orpc/base";
 
-function notImplemented(name: string): never {
-  throw new Error(`${name} is not implemented yet`);
+function getJamieApiKey(context: { jamieApiKey?: string }) {
+  if (!context.jamieApiKey) {
+    throw new Error("Jamie API key missing from context");
+  }
+
+  return context.jamieApiKey;
 }
 
 export const listMeetings = jamieProtected
@@ -27,7 +40,13 @@ export const listMeetings = jamieProtected
   })
   .input(meListMeetingsQuerySchema)
   .output(meetingsListResponseSchema)
-  .handler(() => notImplemented("me.listMeetings"));
+  .handler(({ context, input }) =>
+    callJamieEndpoint(
+      meListMeetingsEndpoint,
+      input,
+      getJamieApiKey(context),
+    ),
+  );
 
 export const getMeeting = jamieProtected
   .route({
@@ -38,7 +57,13 @@ export const getMeeting = jamieProtected
   })
   .input(getMeetingInputSchema)
   .output(meetingDetailResponseSchema)
-  .handler(() => notImplemented("me.getMeeting"));
+  .handler(({ context, input }) =>
+    callJamieEndpoint(
+      meGetMeetingEndpoint,
+      input,
+      getJamieApiKey(context),
+    ),
+  );
 
 export const deleteMeeting = jamieProtected
   .route({
@@ -49,7 +74,13 @@ export const deleteMeeting = jamieProtected
   })
   .input(deleteMeetingInputSchema)
   .output(deleteMeetingResponseSchema)
-  .handler(() => notImplemented("me.deleteMeeting"));
+  .handler(({ context, input }) =>
+    callJamieEndpoint(
+      meDeleteMeetingEndpoint,
+      input,
+      getJamieApiKey(context),
+    ),
+  );
 
 export const searchMeetings = jamieProtected
   .route({
@@ -60,7 +91,13 @@ export const searchMeetings = jamieProtected
   })
   .input(searchMeetingsQuerySchema)
   .output(searchMeetingsResponseSchema)
-  .handler(() => notImplemented("me.searchMeetings"));
+  .handler(({ context, input }) =>
+    callJamieEndpoint(
+      meSearchMeetingsEndpoint,
+      input,
+      getJamieApiKey(context),
+    ),
+  );
 
 export const listTasks = jamieProtected
   .route({
@@ -71,7 +108,13 @@ export const listTasks = jamieProtected
   })
   .input(meListTasksQuerySchema)
   .output(tasksListResponseSchema)
-  .handler(() => notImplemented("me.listTasks"));
+  .handler(({ context, input }) =>
+    callJamieEndpoint(
+      meListTasksEndpoint,
+      input,
+      getJamieApiKey(context),
+    ),
+  );
 
 export const listTags = jamieProtected
   .route({
@@ -82,4 +125,10 @@ export const listTags = jamieProtected
   })
   .input(listTagsQuerySchema)
   .output(tagsListResponseSchema)
-  .handler(() => notImplemented("me.listTags"));
+  .handler(({ context, input }) =>
+    callJamieEndpoint(
+      meListTagsEndpoint,
+      input,
+      getJamieApiKey(context),
+    ),
+  );
