@@ -2,8 +2,15 @@ import type { TOCItemType } from 'fumadocs-core/toc'
 import { useFumadocsLoader } from 'fumadocs-core/source/client'
 import { notFound } from '@tanstack/react-router'
 import { createServerFn } from '@tanstack/react-start'
+import {
+  DocsBody,
+  DocsDescription,
+  DocsPage,
+  DocsTitle,
+} from 'fumadocs-ui/layouts/docs/page'
 import browserCollections from 'fumadocs-mdx:collections/browser'
-import { Suspense } from 'react'
+import { Suspense, type ReactNode } from 'react'
+import { ClientAPIPage } from '#/components/api-page'
 import { JamieDocsLayout } from './docs-layout'
 import { DocsPageContent } from './docs-content'
 import { source } from './source'
@@ -54,10 +61,23 @@ const serverPageLoader = createServerFn({
       throw notFound()
     }
 
+    const pageTree = await source.serializePageTree(source.getPageTree())
+
+    if (page.type === 'openapi') {
+      return {
+        description: page.data.description,
+        pageTree,
+        props: await page.data.getClientAPIPageProps(),
+        title: page.data.title,
+        type: 'openapi' as const,
+      }
+    }
+
     const { renderToString } = await import('react-dom/server.edge')
 
     return {
       description: page.data.description,
+      pageTree,
       path: page.path,
       title: page.data.title,
       toc: page.data.toc.map((item) => ({
@@ -82,14 +102,28 @@ export type LoadedDocsPage = Awaited<ReturnType<typeof loadDocsPage>>
 
 export function DocsRoutePage({ data }: { data: LoadedDocsPage }) {
   const page = useFumadocsLoader(data)
-  const content = docsClientLoader.useContent(page.path, {
-    description: page.description,
-    title: page.title,
-    toc: page.toc,
-  })
+  let content: ReactNode
+
+  if (page.type === 'openapi') {
+    content = (
+      <DocsPage full>
+        <DocsTitle>{page.title}</DocsTitle>
+        <DocsDescription>{page.description}</DocsDescription>
+        <DocsBody>
+          <ClientAPIPage {...page.props} />
+        </DocsBody>
+      </DocsPage>
+    )
+  } else {
+    content = docsClientLoader.useContent(page.path, {
+      description: page.description,
+      title: page.title,
+      toc: page.toc,
+    })
+  }
 
   return (
-    <JamieDocsLayout>
+    <JamieDocsLayout tree={page.pageTree}>
       <Suspense>{content}</Suspense>
     </JamieDocsLayout>
   )
