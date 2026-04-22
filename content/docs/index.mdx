@@ -1,42 +1,72 @@
 ---
 title: Overview
-description: Programmatic access to your Jamie meeting data.
+description: A transparent wrapper around the Jamie developer API.
 ---
 
 import { Card, Cards } from 'fumadocs-ui/components/card'
 
-The Jamie API gives you programmatic access to meetings, tasks, and tags.
+`jamie-api` is a thin wrapper around Jamie's official developer API:
 
-Use it to sync meeting intelligence into internal tools, power automations, or build dashboards tailored to your workflow.
+- [Official Jamie API docs](https://docs.meetjamie.ai/pages/developers/api/api)
+- [GitHub repository](https://github.com/nicolaischmid/jamie-api)
 
-## Base URL
+The goal is not to invent a different platform. The goal is to make Jamie's API
+easier to consume by exposing a clearer typed contract, generated reference
+docs, and a single place to handle the transport details.
 
-```txt
-https://jamie-api.nicolaischmid.com
-```
+## What This Wrapper Does
 
-## What You Can Do
+- Preserves Jamie's core API concepts like personal vs workspace keys
+- Keeps the same authentication model with the `x-api-key` header
+- Exposes the API through a typed oRPC router and OpenAPI docs
+- Normalizes the public contract where a local shape is clearer than the raw
+  upstream transport shape
 
-### Meetings
+In practice, that means you can build against a public contract that feels
+intentional without losing sight of the upstream Jamie API it sits on top of.
 
-List, fetch, search, and delete meetings.
+## What "Transparent" Means Here
 
-### Tasks
+This wrapper is designed to stay close to Jamie instead of hiding it.
 
-Query action items extracted from your meetings.
+Transparency in this project means:
 
-### Tags
+- You can still reason about the API in Jamie terms: meetings, tasks, tags,
+  personal keys, and workspace keys
+- The route families stay explicit: `/v1/me/*` for personal access and
+  `/v1/workspace/*` for workspace access
+- Authentication is passed through using the same `x-api-key` header Jamie
+  expects
+- The wrapper does not add product-specific abstractions unless they improve the
+  public contract
 
-List tags and filter meetings by tag name.
+If you already understand the official Jamie API, this layer should feel
+familiar. If you do not, the docs here should still be enough to get started
+without reverse-engineering raw tRPC request shapes.
 
-## Route Structure
+## How It Works
 
-The API exposes two route families:
+1. Your client sends a request to this wrapper.
+2. The wrapper validates inputs and documents the public request and response
+   shapes.
+3. The wrapper forwards the request context, including headers and API keys, to
+   Jamie's upstream API.
+4. The response is returned through a documented contract that is easier to
+   inspect, type, and evolve.
 
-- `/v1/workspace/*` for workspace-scoped keys
-- `/v1/me/*` for personal keys
+This is why the project can stay transparent and still be useful: it keeps the
+upstream behavior recognizable while improving the developer-facing contract.
 
-Both families use the same request shape and the same `x-api-key` header.
+## Why Use This Instead Of The Raw Upstream Surface
+
+- Clearer request and response schemas
+- OpenAPI docs and RPC procedures generated from the same router
+- A better place to normalize awkward transport details
+- One public surface to review, test, and evolve
+
+Use the official Jamie docs as the upstream source of truth, and use this
+wrapper when you want a typed, documented, consumer-friendly interface around
+that API.
 
 ## Start Here
 
@@ -44,16 +74,16 @@ Both families use the same request shape and the same `x-api-key` header.
   <Card
     title="Getting Started"
     href="/getting-started"
-    description="Create an API key and make your first request."
+    description="Create an API key and make your first request through the wrapper."
   />
   <Card
     title="Access & Security"
     href="/access-and-security"
-    description="Understand key types, auth scopes, and rate-limit expectations."
+    description="Understand how auth, scopes, and route families map to Jamie."
   />
   <Card
     title="API Reference"
     href="/api"
-    description="Generated from the Jamie OpenAPI contract during build."
+    description="Browse the generated reference for the wrapper's public contract."
   />
 </Cards>
