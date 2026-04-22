@@ -1,6 +1,9 @@
-import { addTodo, listTodos } from './todos'
+import me from "./me";
+import workspace from "./workspace";
 
-export default {
-  listTodos,
-  addTodo,
-}
+const router = {
+  me,
+  workspace,
+};
+
+export default router;
