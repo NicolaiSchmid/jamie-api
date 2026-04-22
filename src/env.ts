@@ -4,6 +4,7 @@ import { z } from 'zod'
 export const env = createEnv({
   server: {
     JAMIE_API_BASE_URL: z.string().url().optional(),
+    JAMIE_API_TIMEOUT_MS: z.coerce.number().int().positive().optional(),
     SERVER_URL: z.string().url().optional(),
   },
 
