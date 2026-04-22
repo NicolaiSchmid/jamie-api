@@ -17,14 +17,6 @@ import {
 import { callJamieEndpoint } from "#/orpc/jamie-client";
 import { jamieProtected } from "#/orpc/base";
 
-function getJamieApiKey(context: { jamieApiKey?: string }) {
-  if (!context.jamieApiKey) {
-    throw new Error("Jamie API key missing from context");
-  }
-
-  return context.jamieApiKey;
-}
-
 export const listMeetings = jamieProtected
   .route({
     method: "GET",
@@ -38,7 +30,7 @@ export const listMeetings = jamieProtected
     callJamieEndpoint(
       workspaceListMeetingsEndpoint,
       input,
-      getJamieApiKey(context),
+      context.jamieApiKey,
     ),
   );
 
@@ -55,7 +47,7 @@ export const getMeeting = jamieProtected
     callJamieEndpoint(
       workspaceGetMeetingEndpoint,
       input,
-      getJamieApiKey(context),
+      context.jamieApiKey,
     ),
   );
 
@@ -72,7 +64,7 @@ export const deleteMeeting = jamieProtected
     callJamieEndpoint(
       workspaceDeleteMeetingEndpoint,
       input,
-      getJamieApiKey(context),
+      context.jamieApiKey,
     ),
   );
 
@@ -89,6 +81,6 @@ export const listTasks = jamieProtected
     callJamieEndpoint(
       workspaceListTasksEndpoint,
       input,
-      getJamieApiKey(context),
+      context.jamieApiKey,
     ),
   );

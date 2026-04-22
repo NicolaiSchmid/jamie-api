@@ -5,18 +5,10 @@ export type ORPCContext = {
   jamieApiKey?: string;
 };
 
-export const base = os.$context<ORPCContext>().errors({
-  UNAUTHORIZED: {},
-});
+export const base = os.$context<ORPCContext>();
 
-export const withJamieApiKey = base.middleware(async ({ context, errors, next }) => {
+export const withJamieApiKey = base.middleware(async ({ context, next }) => {
   const jamieApiKey = context.headers.get("x-api-key")?.trim();
-
-  if (!jamieApiKey) {
-    throw errors.UNAUTHORIZED({
-      message: "Missing x-api-key header",
-    });
-  }
 
   return next({
     context: {
