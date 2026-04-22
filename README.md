@@ -88,6 +88,12 @@ Useful endpoints:
 - `http://localhost:3000/api`
 - `http://localhost:3000/api/rpc`
 
+## Deploy
+
+```bash
+pnpm deploy
+```
+
 ## Quality checks
 
 ```bash
