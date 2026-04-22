@@ -1,0 +1,68 @@
+---
+title: Getting Started
+description: Create an API key and make your first request.
+---
+
+## Prerequisites
+
+- Use a Pro, Team, or Enterprise plan with API access.
+- Create an API key in `Settings -> Developers -> API Keys`.
+- Send the key in the `x-api-key` header on every request.
+
+## Creating an API Key
+
+1. Open `Settings -> Developers -> API Keys`.
+2. Click `Add API Key`.
+3. Choose `Personal` or `Workspace` scope.
+4. Enter a name and optional description.
+5. Copy the key immediately after creation.
+
+Treat the key like a password. If you lose it, you need to regenerate it.
+
+## First Request
+
+### Workspace key
+
+```bash
+curl -H "x-api-key: jk_your_workspace_key" \
+  "https://beta-api.meetjamie.ai/v1/workspace/meetings.list"
+```
+
+### Personal key
+
+```bash
+curl -H "x-api-key: jk_your_personal_key" \
+  "https://beta-api.meetjamie.ai/v1/me/meetings.list"
+```
+
+## Common Request Pattern
+
+Both key types use the same request format:
+
+```bash
+curl -H "x-api-key: jk_your_personal_key" \
+  'https://beta-api.meetjamie.ai/v1/me/meetings.search?input={"json":{"query":"product roadmap"}}'
+```
+
+- Read operations use `GET` with optional parameters in `?input={"json": {...}}`
+- Delete operations use `POST` with a JSON body like `{"json": {...}}`
+- The route difference between key types is the prefix: `/v1/workspace/` vs `/v1/me/`
+
+## Response Format
+
+Responses wrap the payload in an envelope:
+
+```json
+{
+  "result": {
+    "data": {
+      "json": {
+        "meetings": [],
+        "nextCursor": null
+      }
+    }
+  }
+}
+```
+
+Your actual data lives inside `result.data.json`.

@@ -1,0 +1,57 @@
+---
+title: Access & Security
+description: Understand API key scope, auth headers, and operational limits.
+---
+
+## API Key Scopes
+
+Jamie supports two key types:
+
+- Personal keys use `/v1/me/*`
+- Workspace keys use `/v1/workspace/*`
+
+Using a key on the wrong route family returns `403 Forbidden`.
+
+## Authentication
+
+Every request must include an API key:
+
+```http
+x-api-key: jk_your_key
+```
+
+API keys use the `jk_` prefix. Missing or invalid keys return `401 Unauthorized`.
+
+## Access Rules
+
+- Personal keys can access your meetings plus meetings shared with you.
+- Workspace keys can access all meetings and tasks in the workspace.
+- Personal keys can search meetings and list tags.
+- Workspace keys can filter list results by `userEmail`.
+
+## Rate Limiting
+
+Jamie documents a limit of `100 requests per minute`.
+
+- Personal keys are limited per user.
+- Workspace keys are limited per workspace.
+- `429 Too Many Requests` responses include `X-RateLimit-Limit`, `X-RateLimit-Remaining`, and `X-RateLimit-Reset`.
+
+## Error Responses
+
+Errors return a JSON payload with an `error` field:
+
+```json
+{
+  "error": "Description of what went wrong"
+}
+```
+
+Common status codes:
+
+- `400` for invalid parameters
+- `401` for missing or invalid API keys
+- `403` for wrong key type or insufficient access
+- `404` for missing resources
+- `429` for rate-limit violations
+- `500` for server-side failures

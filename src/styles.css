@@ -1,5 +1,8 @@
 
 @import "tailwindcss";
+@import "fumadocs-ui/css/neutral.css";
+@import "fumadocs-ui/css/preset.css";
+@import "fumadocs-openapi/css/preset.css";
 
 * {
   box-sizing: border-box;
@@ -11,7 +14,21 @@ body,
   min-height: 100%;
 }
 
-body {
-  margin: 0;
+html {
+  scroll-behavior: smooth;
 }
 
+body {
+  margin: 0;
+  background: var(--color-fd-background);
+  color: var(--color-fd-foreground);
+}
+
+a {
+  color: inherit;
+}
+
+:root {
+  --background: var(--color-fd-background);
+  --foreground: var(--color-fd-foreground);
+}
