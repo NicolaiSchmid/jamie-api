@@ -3,6 +3,7 @@ import { z } from 'zod'
 
 export const env = createEnv({
   server: {
+    JAMIE_API_BASE_URL: z.string().url().optional(),
     SERVER_URL: z.string().url().optional(),
   },
 
