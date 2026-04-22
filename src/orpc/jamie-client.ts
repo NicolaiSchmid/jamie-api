@@ -1,8 +1,9 @@
-import { ZodError } from "zod";
+import type { ZodError, ZodTypeAny } from "zod";
 
 import { env } from "#/env";
 import { upstreamErrorResponseSchema } from "#/orpc/jamie-contract";
 import type { JamieEndpoint } from "#/orpc/jamie-endpoints";
+import { proxyUpstreamResponseHeaders } from "#/orpc/response-headers";
 
 const DEFAULT_JAMIE_API_BASE_URL = "https://beta-api.meetjamie.ai";
 const DEFAULT_JAMIE_API_TIMEOUT_MS = 15_000;
@@ -10,167 +11,178 @@ const DEFAULT_JAMIE_API_TIMEOUT_MS = 15_000;
 type HeaderMap = Record<string, string>;
 
 export class JamieUpstreamError extends Error {
-  readonly status: number;
-  readonly body: unknown;
-  readonly headers: HeaderMap;
+	readonly status: number;
+	readonly body: unknown;
+	readonly headers: HeaderMap;
 
-  constructor(status: number, body: unknown, headers: HeaderMap) {
-    const parsedBody = upstreamErrorResponseSchema.safeParse(body);
-    const message =
-      parsedBody.success
-        ? parsedBody.data.error
-        : `Jamie upstream request failed with status ${status}`;
+	constructor(status: number, body: unknown, headers: HeaderMap) {
+		const parsedBody = upstreamErrorResponseSchema.safeParse(body);
+		const message = parsedBody.success
+			? parsedBody.data.error
+			: `Jamie upstream request failed with status ${status}`;
 
-    super(message);
-    this.name = "JamieUpstreamError";
-    this.status = status;
-    this.body = body;
-    this.headers = headers;
-  }
+		super(message);
+		this.name = "JamieUpstreamError";
+		this.status = status;
+		this.body = body;
+		this.headers = headers;
+	}
 }
 
 export class JamieResponseParseError extends Error {
-  readonly cause: ZodError;
-  readonly body: unknown;
+	readonly cause: ZodError;
+	readonly body: unknown;
 
-  constructor(body: unknown, cause: ZodError) {
-    super("Jamie upstream response did not match the documented schema");
-    this.name = "JamieResponseParseError";
-    this.body = body;
-    this.cause = cause;
-  }
+	constructor(body: unknown, cause: ZodError) {
+		super("Jamie upstream response did not match the documented schema");
+		this.name = "JamieResponseParseError";
+		this.body = body;
+		this.cause = cause;
+	}
 }
 
 export class JamieRequestTimeoutError extends Error {
-  readonly timeoutMs: number;
+	readonly timeoutMs: number;
 
-  constructor(timeoutMs: number) {
-    super(`Jamie upstream request timed out after ${timeoutMs}ms`);
-    this.name = "JamieRequestTimeoutError";
-    this.timeoutMs = timeoutMs;
-  }
+	constructor(timeoutMs: number) {
+		super(`Jamie upstream request timed out after ${timeoutMs}ms`);
+		this.name = "JamieRequestTimeoutError";
+		this.timeoutMs = timeoutMs;
+	}
 }
 
 function getJamieApiBaseUrl() {
-  return env.JAMIE_API_BASE_URL ?? DEFAULT_JAMIE_API_BASE_URL;
+	return env.JAMIE_API_BASE_URL ?? DEFAULT_JAMIE_API_BASE_URL;
 }
 
 function getJamieApiTimeoutMs() {
-  return env.JAMIE_API_TIMEOUT_MS ?? DEFAULT_JAMIE_API_TIMEOUT_MS;
+	return env.JAMIE_API_TIMEOUT_MS ?? DEFAULT_JAMIE_API_TIMEOUT_MS;
 }
 
 function headersToRecord(headers: Headers): HeaderMap {
-  return Object.fromEntries(headers.entries());
+	return Object.fromEntries(headers.entries());
 }
 
 function encodeUpstreamInput(input: unknown) {
-  if (input === undefined) {
-    return undefined;
-  }
+	if (input === undefined) {
+		return undefined;
+	}
 
-  if (typeof input === "object" && input !== null && Object.keys(input).length === 0) {
-    return undefined;
-  }
+	if (
+		typeof input === "object" &&
+		input !== null &&
+		Object.keys(input).length === 0
+	) {
+		return undefined;
+	}
 
-  return JSON.stringify({ json: input });
+	return JSON.stringify({ json: input });
 }
 
 function unwrapSuccessPayload(body: unknown) {
-  if (
-    typeof body === "object" &&
-    body !== null &&
-    "result" in body &&
-    typeof body.result === "object" &&
-    body.result !== null &&
-    "data" in body.result &&
-    typeof body.result.data === "object" &&
-    body.result.data !== null &&
-    "json" in body.result.data
-  ) {
-    return body.result.data.json;
-  }
+	if (
+		typeof body === "object" &&
+		body !== null &&
+		"result" in body &&
+		typeof body.result === "object" &&
+		body.result !== null &&
+		"data" in body.result &&
+		typeof body.result.data === "object" &&
+		body.result.data !== null &&
+		"json" in body.result.data
+	) {
+		return body.result.data.json;
+	}
 
-  return body;
+	return body;
 }
 
 function parseResponseBody(rawText: string): unknown {
-  if (rawText.length === 0) {
-    return undefined;
-  }
+	if (rawText.length === 0) {
+		return undefined;
+	}
 
-  try {
-    return JSON.parse(rawText);
-  } catch {
-    return rawText;
-  }
+	try {
+		return JSON.parse(rawText);
+	} catch {
+		return rawText;
+	}
 }
 
-export async function callJamieEndpoint<TEndpoint extends JamieEndpoint<any, any>>(
-  endpoint: TEndpoint,
-  rawInput: TEndpoint["inputSchema"]["_input"],
-  apiKey?: string,
+export async function callJamieEndpoint<
+	TEndpoint extends JamieEndpoint<ZodTypeAny, ZodTypeAny>,
+>(
+	endpoint: TEndpoint,
+	rawInput: TEndpoint["inputSchema"]["_input"],
+	apiKey?: string,
+	resHeaders?: Headers,
 ): Promise<TEndpoint["outputSchema"]["_output"]> {
-  const input = endpoint.inputSchema.parse(rawInput);
-  const upstreamInput = endpoint.toUpstreamInput(input);
-  const url = new URL(
-    `/v1/${endpoint.scope}/${endpoint.procedure}`,
-    getJamieApiBaseUrl(),
-  );
+	const input = endpoint.inputSchema.parse(rawInput);
+	const upstreamInput = endpoint.toUpstreamInput(input);
+	const url = new URL(
+		`/v1/${endpoint.scope}/${endpoint.procedure}`,
+		getJamieApiBaseUrl(),
+	);
 
-  const encodedInput = encodeUpstreamInput(upstreamInput);
-  const timeoutMs = getJamieApiTimeoutMs();
-  const controller = new AbortController();
-  const headers: Record<string, string> = {
-    "content-type": "application/json",
-  };
+	const encodedInput = encodeUpstreamInput(upstreamInput);
+	const timeoutMs = getJamieApiTimeoutMs();
+	const controller = new AbortController();
+	const headers: Record<string, string> = {
+		"content-type": "application/json",
+	};
 
-  if (apiKey) {
-    headers["x-api-key"] = apiKey;
-  }
+	if (apiKey) {
+		headers["x-api-key"] = apiKey;
+	}
 
-  const init: RequestInit = {
-    method: endpoint.method,
-    headers,
-    signal: controller.signal,
-  };
+	const init: RequestInit = {
+		method: endpoint.method,
+		headers,
+		signal: controller.signal,
+	};
 
-  if (endpoint.method === "GET") {
-    if (encodedInput) {
-      url.searchParams.set("input", encodedInput);
-    }
-  } else if (encodedInput) {
-    init.body = encodedInput;
-  }
+	if (endpoint.method === "GET") {
+		if (encodedInput) {
+			url.searchParams.set("input", encodedInput);
+		}
+	} else if (encodedInput) {
+		init.body = encodedInput;
+	}
 
-  const timeoutId = globalThis.setTimeout(() => {
-    controller.abort();
-  }, timeoutMs);
+	const timeoutId = globalThis.setTimeout(() => {
+		controller.abort();
+	}, timeoutMs);
 
-  try {
-    const response = await fetch(url, init);
-    const headers = headersToRecord(response.headers);
-    const rawText = await response.text();
-    const body = parseResponseBody(rawText);
+	try {
+		const response = await fetch(url, init);
+		const headers = headersToRecord(response.headers);
 
-    if (!response.ok) {
-      throw new JamieUpstreamError(response.status, body, headers);
-    }
+		if (resHeaders) {
+			proxyUpstreamResponseHeaders(response.headers, resHeaders);
+		}
 
-    const successPayload = unwrapSuccessPayload(body);
-    const parsed = endpoint.outputSchema.safeParse(successPayload);
+		const rawText = await response.text();
+		const body = parseResponseBody(rawText);
 
-    if (!parsed.success) {
-      throw new JamieResponseParseError(successPayload, parsed.error);
-    }
+		if (!response.ok) {
+			throw new JamieUpstreamError(response.status, body, headers);
+		}
 
-    return parsed.data;
-  } catch (error) {
-    if (error instanceof Error && error.name === "AbortError") {
-      throw new JamieRequestTimeoutError(timeoutMs);
-    }
+		const successPayload = unwrapSuccessPayload(body);
+		const parsed = endpoint.outputSchema.safeParse(successPayload);
 
-    throw error;
-  } finally {
-    globalThis.clearTimeout(timeoutId);
-  }
+		if (!parsed.success) {
+			throw new JamieResponseParseError(successPayload, parsed.error);
+		}
+
+		return parsed.data;
+	} catch (error) {
+		if (error instanceof Error && error.name === "AbortError") {
+			throw new JamieRequestTimeoutError(timeoutMs);
+		}
+
+		throw error;
+	} finally {
+		globalThis.clearTimeout(timeoutId);
+	}
 }
