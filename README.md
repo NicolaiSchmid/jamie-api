@@ -1,222 +1,117 @@
-Welcome to your new TanStack Start app! 
+# jamie-api
 
-# Getting Started
+> A typed, cleaner wrapper around the uglier tRPC-based API behind [meetjamie.ai](https://www.meetjamie.ai/).
 
-To run this application:
+`jamie-api` exists to put a stable, documented, ergonomic layer in front of an
+upstream API that is useful but not especially pleasant to consume directly.
+Instead of spreading raw tRPC shapes and transport quirks through every client,
+this project uses oRPC, Zod, and TanStack Start to expose a clearer contract.
+
+It aims to be:
+
+- Typed end to end
+- Easy to document and inspect
+- Safer to evolve than a direct upstream integration
+- Focused on wrapper correctness rather than app UI
+
+## Why this exists
+
+The API behind `meetjamie.ai` does the job, but it is not the interface most
+people would choose to build against directly.
+
+This wrapper is the nicer layer on top:
+
+- It gives consumers explicit request and response shapes
+- It creates room to normalize awkward upstream payloads
+- It keeps auth and header forwarding in one place
+- It exposes both RPC and OpenAPI surfaces from the same router
+- It makes the public contract easier to reason about than raw upstream tRPC
+
+## Current shape
+
+The repository already has the core wrapper structure in place:
+
+- An oRPC router in `src/orpc/`
+- An RPC handler at `/api/rpc`
+- An OpenAPI handler and docs surface at `/api`
+- Zod schemas for public shapes
+- A TanStack Start server shell around the API
+
+The current router is still minimal and includes example `todo` procedures, but
+the repo structure is set up for the real job: turning Jamie's upstream API
+into a cleaner, typed interface.
+
+## API surfaces
+
+| Route | Purpose |
+| --- | --- |
+| `/api` | OpenAPI-backed HTTP surface and interactive docs |
+| `/api/rpc` | oRPC RPC endpoint |
+
+The goal is to keep these surfaces aligned so the documented HTTP contract and
+the RPC contract do not drift apart.
+
+## Tech stack
+
+- [oRPC](https://orpc.unnoq.com/) for typed procedures and router composition
+- [TanStack Start](https://tanstack.com/start) for the server runtime and route
+  handling
+- [Zod](https://zod.dev/) for request and response validation
+- [Biome](https://biomejs.dev/) for formatting and linting
+- [Vitest](https://vitest.dev/) for tests
+
+## Project structure
+
+```text
+src/
+  env.ts                 Environment validation
+  orpc/
+    client.ts            Shared oRPC client setup
+    schema.ts            Shared Zod schemas
+    router/              Public wrapper procedures
+  routes/
+    api.$.ts             OpenAPI handler
+    api.rpc.$.ts         RPC handler
+```
+
+## Local development
 
 ```bash
 pnpm install
 pnpm dev
 ```
 
-# Building For Production
+The dev server runs on `http://localhost:3000`.
 
-To build this application for production:
+Useful endpoints:
 
-```bash
-pnpm build
-```
+- `http://localhost:3000/api`
+- `http://localhost:3000/api/rpc`
 
-## Testing
-
-This project uses [Vitest](https://vitest.dev/) for testing. You can run the tests with:
+## Quality checks
 
 ```bash
 pnpm test
-```
-
-## Styling
-
-This project uses [Tailwind CSS](https://tailwindcss.com/) for styling.
-
-### Removing Tailwind CSS
-
-If you prefer not to use Tailwind CSS:
-
-1. Remove the demo pages in `src/routes/demo/`
-2. Replace the Tailwind import in `src/styles.css` with your own styles
-3. Remove `tailwindcss()` from the plugins array in `vite.config.ts`
-4. Uninstall the packages: `pnpm add @tailwindcss/vite tailwindcss --dev`
-
-## Linting & Formatting
-
-This project uses [Biome](https://biomejs.dev/) for linting and formatting. The following scripts are available:
-
-
-```bash
 pnpm lint
 pnpm format
 pnpm check
+pnpm build
 ```
 
+## Design principles
 
-## T3Env
+This project should stay narrow and intentional:
 
-- You can use T3Env to add type safety to your environment variables.
-- Add Environment variables to the `src/env.mjs` file.
-- Use the environment variables in your code.
+- Be a wrapper, not a generic app
+- Prefer explicit public schemas over leaking upstream response shapes
+- Keep shared auth and transport logic centralized
+- Preserve headers and context when proxying upstream requests
+- Keep OpenAPI metadata accurate for anything public
 
-### Usage
+## Direction
 
-```ts
-import { env } from "#/env";
+As this wrapper grows, the main job is not to mirror the upstream API
+perfectly. The job is to make it nicer to use.
 
-console.log(env.VITE_APP_TITLE);
-```
-
-
-
-
-
-
-## Routing
-
-This project uses [TanStack Router](https://tanstack.com/router) with file-based routing. Routes are managed as files in `src/routes`.
-
-### Adding A Route
-
-To add a new route to your application just add a new file in the `./src/routes` directory.
-
-TanStack will automatically generate the content of the route file for you.
-
-Now that you have two routes you can use a `Link` component to navigate between them.
-
-### Adding Links
-
-To use SPA (Single Page Application) navigation you will need to import the `Link` component from `@tanstack/react-router`.
-
-```tsx
-import { Link } from "@tanstack/react-router";
-```
-
-Then anywhere in your JSX you can use it like so:
-
-```tsx
-<Link to="/about">About</Link>
-```
-
-This will create a link that will navigate to the `/about` route.
-
-More information on the `Link` component can be found in the [Link documentation](https://tanstack.com/router/v1/docs/framework/react/api/router/linkComponent).
-
-### Using A Layout
-
-In the File Based Routing setup the layout is located in `src/routes/__root.tsx`. Anything you add to the root route will appear in all the routes. The route content will appear in the JSX where you render `{children}` in the `shellComponent`.
-
-Here is an example layout that includes a header:
-
-```tsx
-import { HeadContent, Scripts, createRootRoute } from '@tanstack/react-router'
-
-export const Route = createRootRoute({
-  head: () => ({
-    meta: [
-      { charSet: 'utf-8' },
-      { name: 'viewport', content: 'width=device-width, initial-scale=1' },
-      { title: 'My App' },
-    ],
-  }),
-  shellComponent: ({ children }) => (
-    <html lang="en">
-      <head>
-        <HeadContent />
-      </head>
-      <body>
-        <header>
-          <nav>
-            <Link to="/">Home</Link>
-            <Link to="/about">About</Link>
-          </nav>
-        </header>
-        {children}
-        <Scripts />
-      </body>
-    </html>
-  ),
-})
-```
-
-More information on layouts can be found in the [Layouts documentation](https://tanstack.com/router/latest/docs/framework/react/guide/routing-concepts#layouts).
-
-## Server Functions
-
-TanStack Start provides server functions that allow you to write server-side code that seamlessly integrates with your client components.
-
-```tsx
-import { createServerFn } from '@tanstack/react-start'
-
-const getServerTime = createServerFn({
-  method: 'GET',
-}).handler(async () => {
-  return new Date().toISOString()
-})
-
-// Use in a component
-function MyComponent() {
-  const [time, setTime] = useState('')
-  
-  useEffect(() => {
-    getServerTime().then(setTime)
-  }, [])
-  
-  return <div>Server time: {time}</div>
-}
-```
-
-## API Routes
-
-You can create API routes by using the `server` property in your route definitions:
-
-```tsx
-import { createFileRoute } from '@tanstack/react-router'
-import { json } from '@tanstack/react-start'
-
-export const Route = createFileRoute('/api/hello')({
-  server: {
-    handlers: {
-      GET: () => json({ message: 'Hello, World!' }),
-    },
-  },
-})
-```
-
-## Data Fetching
-
-There are multiple ways to fetch data in your application. You can use TanStack Query to fetch data from a server. But you can also use the `loader` functionality built into TanStack Router to load the data for a route before it's rendered.
-
-For example:
-
-```tsx
-import { createFileRoute } from '@tanstack/react-router'
-
-export const Route = createFileRoute('/people')({
-  loader: async () => {
-    const response = await fetch('https://swapi.dev/api/people')
-    return response.json()
-  },
-  component: PeopleComponent,
-})
-
-function PeopleComponent() {
-  const data = Route.useLoaderData()
-  return (
-    <ul>
-      {data.results.map((person) => (
-        <li key={person.name}>{person.name}</li>
-      ))}
-    </ul>
-  )
-}
-```
-
-Loaders simplify your data fetching logic dramatically. Check out more information in the [Loader documentation](https://tanstack.com/router/latest/docs/framework/react/guide/data-loading#loader-parameters).
-
-# Demo files
-
-Files prefixed with `demo` can be safely deleted. They are there to provide a starting point for you to play around with the features you've installed.
-
-# Learn More
-
-You can learn more about all of the offerings from TanStack in the [TanStack documentation](https://tanstack.com).
-
-For TanStack Start specific documentation, visit [TanStack Start](https://tanstack.com/start).
+That means stable shapes, better names, clear docs, and a public contract that
+feels designed instead of inherited.
