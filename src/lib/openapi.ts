@@ -5,7 +5,7 @@ import { generateOpenApiDocument } from '#/orpc/openapi'
 export const openapi = createOpenAPI({
   input: async () => ({
     'jamie-api': (await generateOpenApiDocument(
-      new Request('https://beta-api.meetjamie.ai/v1/openapi.json'),
+      new Request('https://jamie-api.nicolaischmid.com/v1/openapi.json'),
     )) as Document,
   }),
 })

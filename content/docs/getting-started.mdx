@@ -25,14 +25,14 @@ Treat the key like a password. If you lose it, you need to regenerate it.
 
 ```bash
 curl -H "x-api-key: jk_your_workspace_key" \
-  "https://beta-api.meetjamie.ai/v1/workspace/meetings.list"
+  "https://jamie-api.nicolaischmid.com/v1/workspace/meetings.list"
 ```
 
 ### Personal key
 
 ```bash
 curl -H "x-api-key: jk_your_personal_key" \
-  "https://beta-api.meetjamie.ai/v1/me/meetings.list"
+  "https://jamie-api.nicolaischmid.com/v1/me/meetings.list"
 ```
 
 ## Common Request Pattern
@@ -41,7 +41,7 @@ Both key types use the same request format:
 
 ```bash
 curl -H "x-api-key: jk_your_personal_key" \
-  'https://beta-api.meetjamie.ai/v1/me/meetings.search?input={"json":{"query":"product roadmap"}}'
+  'https://jamie-api.nicolaischmid.com/v1/me/meetings.search?input={"json":{"query":"product roadmap"}}'
 ```
 
 - Read operations use `GET` with optional parameters in `?input={"json": {...}}`
