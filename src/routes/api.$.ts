@@ -29,12 +29,13 @@ const handler = new OpenAPIHandler(router, {
         commonSchemas: {
           UndefinedError: { error: 'UndefinedError' },
         },
-        security: [{ bearerAuth: [] }],
+        security: [{ apiKeyAuth: [] }],
         components: {
           securitySchemes: {
-            bearerAuth: {
-              type: 'http',
-              scheme: 'bearer',
+            apiKeyAuth: {
+              type: 'apiKey',
+              in: 'header',
+              name: 'x-api-key',
             },
           },
         },
@@ -42,8 +43,8 @@ const handler = new OpenAPIHandler(router, {
       docsConfig: {
         authentication: {
           securitySchemes: {
-            bearerAuth: {
-              token: 'default-token',
+            apiKeyAuth: {
+              token: 'jk_example_api_key',
             },
           },
         },
