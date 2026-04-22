@@ -108,7 +108,7 @@ function parseResponseBody(rawText: string): unknown {
 export async function callJamieEndpoint<TEndpoint extends JamieEndpoint<any, any>>(
   endpoint: TEndpoint,
   rawInput: TEndpoint["inputSchema"]["_input"],
-  apiKey: string,
+  apiKey?: string,
 ): Promise<TEndpoint["outputSchema"]["_output"]> {
   const input = endpoint.inputSchema.parse(rawInput);
   const upstreamInput = endpoint.toUpstreamInput(input);
@@ -120,12 +120,17 @@ export async function callJamieEndpoint<TEndpoint extends JamieEndpoint<any, any
   const encodedInput = encodeUpstreamInput(upstreamInput);
   const timeoutMs = getJamieApiTimeoutMs();
   const controller = new AbortController();
+  const headers: Record<string, string> = {
+    "content-type": "application/json",
+  };
+
+  if (apiKey) {
+    headers["x-api-key"] = apiKey;
+  }
+
   const init: RequestInit = {
     method: endpoint.method,
-    headers: {
-      "x-api-key": apiKey,
-      "content-type": "application/json",
-    },
+    headers,
     signal: controller.signal,
   };
 
