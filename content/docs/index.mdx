@@ -1,0 +1,59 @@
+---
+title: Overview
+description: Programmatic access to your Jamie meeting data.
+---
+
+import { Card, Cards } from 'fumadocs-ui/components/card'
+
+The Jamie API gives you programmatic access to meetings, tasks, and tags.
+
+Use it to sync meeting intelligence into internal tools, power automations, or build dashboards tailored to your workflow.
+
+## Base URL
+
+```txt
+https://beta-api.meetjamie.ai
+```
+
+## What You Can Do
+
+### Meetings
+
+List, fetch, search, and delete meetings.
+
+### Tasks
+
+Query action items extracted from your meetings.
+
+### Tags
+
+List tags and filter meetings by tag name.
+
+## Route Structure
+
+The API exposes two route families:
+
+- `/v1/workspace/*` for workspace-scoped keys
+- `/v1/me/*` for personal keys
+
+Both families use the same request shape and the same `x-api-key` header.
+
+## Start Here
+
+<Cards>
+  <Card
+    title="Getting Started"
+    href="/getting-started"
+    description="Create an API key and make your first request."
+  />
+  <Card
+    title="Access & Security"
+    href="/access-and-security"
+    description="Understand key types, auth scopes, and rate-limit expectations."
+  />
+  <Card
+    title="API Reference"
+    href="/api"
+    description="Generated from the Jamie OpenAPI contract during build."
+  />
+</Cards>

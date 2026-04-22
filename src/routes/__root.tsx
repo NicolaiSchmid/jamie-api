@@ -1,10 +1,12 @@
 import {
   HeadContent,
+  Outlet,
   Scripts,
   createRootRouteWithContext,
 } from '@tanstack/react-router'
 import { TanStackRouterDevtoolsPanel } from '@tanstack/react-router-devtools'
 import { TanStackDevtools } from '@tanstack/react-devtools'
+import { RootProvider } from 'fumadocs-ui/provider/tanstack'
 
 import TanStackQueryDevtools from '../integrations/tanstack-query/devtools'
 
@@ -27,7 +29,7 @@ export const Route = createRootRouteWithContext<MyRouterContext>()({
         content: 'width=device-width, initial-scale=1',
       },
       {
-        title: 'TanStack Start Starter',
+        title: 'Jamie API',
       },
     ],
     links: [
@@ -38,16 +40,21 @@ export const Route = createRootRouteWithContext<MyRouterContext>()({
     ],
   }),
   shellComponent: RootDocument,
+  component: RootComponent,
 })
+
+function RootComponent() {
+  return <Outlet />
+}
 
 function RootDocument({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
       <head>
         <HeadContent />
       </head>
-      <body>
-        {children}
+      <body className="min-h-screen bg-background text-foreground antialiased">
+        <RootProvider>{children}</RootProvider>
         <TanStackDevtools
           config={{
             position: 'bottom-right',
