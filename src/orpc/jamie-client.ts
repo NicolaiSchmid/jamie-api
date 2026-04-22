@@ -93,6 +93,18 @@ function unwrapSuccessPayload(body: unknown) {
   return body;
 }
 
+function parseResponseBody(rawText: string): unknown {
+  if (rawText.length === 0) {
+    return undefined;
+  }
+
+  try {
+    return JSON.parse(rawText);
+  } catch {
+    return rawText;
+  }
+}
+
 export async function callJamieEndpoint<TEndpoint extends JamieEndpoint<any, any>>(
   endpoint: TEndpoint,
   rawInput: TEndpoint["inputSchema"]["_input"],
@@ -132,7 +144,8 @@ export async function callJamieEndpoint<TEndpoint extends JamieEndpoint<any, any
   try {
     const response = await fetch(url, init);
     const headers = headersToRecord(response.headers);
-    const body = await response.json();
+    const rawText = await response.text();
+    const body = parseResponseBody(rawText);
 
     if (!response.ok) {
       throw new JamieUpstreamError(response.status, body, headers);
