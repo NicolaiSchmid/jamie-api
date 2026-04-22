@@ -1,9 +1,7 @@
-import me from "./me";
-import workspace from "./workspace";
+import v1 from "./v1";
 
 const router = {
-  me,
-  workspace,
+  v1,
 };
 
 export default router;
